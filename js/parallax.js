@@ -4,10 +4,12 @@ $(function(){
 	  , $bodyAndHTML = $body.add( 'html' )
 	  ,     $content = $( '#content' )
 	  ,    $sections = $content.find( 'section' )
+	  , $sectionsLen = $sections.length
 	  ,    $scroller = $( '#mock-scroller' )
 	  ,  fScrPercent = 0
 	  ,   aAnimProps = [ 'opacity', 'left', 'top', 'width', 'height', 'background-position' ]
 	  ,        sHash = location.hash
+	  ,      useHash = ( $content.data('use-hash') !== undefined ) ? $content.data('use-hash') : true
 	  ,  bAllowAnims = !~location.href.indexOf( 'noanims' )
 	  ,  aAnimations = []
 	  ,    webkitCSS = document.body.style[ 'webkitTransform' ] !== undefined
@@ -21,6 +23,7 @@ $(function(){
 		var $sec = $sections.eq( ix );
 		$sec.data( '$pNodes' , $sec.find( '.animate' ) );
 		$sec.data( 'bSection', true );
+		$sec.data( 'sSecId', $sec.attr( 'id' ).split( '-' ).pop());
 
 		$sec.add( $sec.data( '$pNodes' ) ).each( function(){
 			var $this = $( this )
@@ -337,6 +340,14 @@ $(function(){
 		  , $node, sSecId, n, oCssProps, oProps, iCurScr, sState
 		  ;
 
+		// local aliases for global variables
+		var $sectionsLocal    = $sections;
+		var $sectionsLenLocal = $sectionsLen;
+		var $contentLocal     = $content;
+		var $bodyLocal        = $body;
+		var aAnimationsLocal  = aAnimations;
+		var useHashLocal      = useHash;
+
 		iScrTop || ( iScrTop = $window.scrollTop() );
 
 		iWinScrTop = iScrTop;
@@ -345,19 +356,22 @@ $(function(){
 		if( iScrTop > iMaxHeight ){ iScrTop = iMaxHeight; }
 
 		// hide/show sections
-		for( i=0, l=$sections.length; i<l; i++ ){
-			$sec  = $sections.eq(i);
+		for( i=0; i<$sectionsLenLocal; i++ ){
+			$sec  = $sectionsLocal.eq(i);
 			oData = $sec.data();
 
 			if( ( oData.iTop <= iScrTop ) && ( oData.iBottom >= ( iScrTop ) ) ){
 				if( !oData.bVisible ){
-					$sec.appendTo( $content );
+					$sec.appendTo( $contentLocal );
 					oData.bVisible = true;
 				}
 				if( !bChangedLoc ){
-					if( sLastHash != ( sSecId = $sec.attr( 'id' ).split( '-' ).pop() ) ){
-						location.replace( '#' + ( sLastHash = sSecId ) );
-						$body.prop( 'class', $body.prop( 'class' ).replace( /(?: |^)section-[^ ]+/g, '' ) ).addClass( 'section-' + sSecId );
+					if( sLastHash != ( sSecId = oData.sSecId ) ){
+						sLastHash = sSecId;
+						if (useHashLocal) {
+							location.replace( '#' + sSecId );
+						}
+						$bodyLocal.prop( 'class', $bodyLocal.prop( 'class' ).replace( /(?: |^)section-[^ ]+/g, '' ) + ' section-' + sSecId);
 					}
 					bChangedLoc = true;
 				}
@@ -369,8 +383,8 @@ $(function(){
 			}
 		}
 
-		for( i=0, l=aAnimations.length; i<l; i++ ){
-			oAnim   = aAnimations[i];
+		for( i=0, l=aAnimationsLocal.length; i<l; i++ ){
+			oAnim   = aAnimationsLocal[i];
 			$node   = oAnim.$node;
 			iCurScr = iScrTop;
 
@@ -463,7 +477,7 @@ $(function(){
 		}
 	}
 
-	if( sHash ){
+	if( sHash && useHash ){
 		setTimeout( function(){
 			scrollToSection( sHash.substr( 1 ), true );
 		}, 100 );
